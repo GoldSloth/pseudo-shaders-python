@@ -9,8 +9,6 @@ class ShaderProcess:
         self.height = height
         self._img = np.ndarray((height, width, 4), dtype=np.uint8)
         self._img.fill(0)
-        self.hasRun = False
-        self.p = multiprocessing.Pool(4)
     
     def _taskGenerator(self, width, height):
         for y in range(width):
@@ -20,7 +18,8 @@ class ShaderProcess:
                 yield (y, x, v, u)
         
 
-    def runShader(self, shader):
+    def runShader(self, shader, threads=4):
+        self.p = multiprocessing.Pool(threads)
         t = time.time()
         result = self.p.map(shader, [n for n in self._taskGenerator(self.width, self.height)])
         for y in range(self.width):
@@ -42,8 +41,8 @@ class MultiShader(ShaderProcess):
         super().__init__(width=width, height=height)
         self.subShaders = {}
 
-    def addSubShader(self, shaderID, shader, shaderProgram):
-        shader.runShader(shaderProgram)
+    def addSubShader(self, shaderID, shader, shaderProgram, threads=4):
+        shader.runShader(shaderProgram, threads=threads)
         self.subShaders[shaderID] = shader
 
 

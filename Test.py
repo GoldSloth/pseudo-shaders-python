@@ -1,11 +1,8 @@
 from ShaderLib import ShaderProcess, MultiShader
 import numpy as np
 
-def shader(xe):
-    x = xe[0]
-    y = xe[1]
-    u = xe[2]
-    v = xe[3]
+def shader(arguments):
+    x, y, u, v = arguments
     e = np.uint8(v * 255)
     return np.array([e, e, e, 255])
 
