@@ -4,6 +4,21 @@ import numexpr
 import multiprocessing
 import time
 
+class BaseShader:
+    def __init__(self, height, width):
+        self.height = height
+        self.width = width
+        self.image = np.ndarray((height, width, 4), dtype=np.uint8)
+    
+    def getPixel(self, u, v):
+        vU = np.floor(u * self.width)
+        vV = np.floor(v * self.height)
+        return self.image[vU, vV]
+
+    def saveImage(self, filename):
+        im = Image.fromarray(self.image)
+        im.save(filename, "PNG")
+
 class ShaderProcess:
     def __init__(self, width=800, height=600):
         self.width = width
