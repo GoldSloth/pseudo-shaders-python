@@ -1,5 +1,6 @@
 import numpy as np
 from PIL import Image
+import numexpr
 import multiprocessing
 import time
 
@@ -54,3 +55,11 @@ class MultiShader(ShaderProcess):
                 
                 self._img[y, x] = masterShader(y, x, u, v, self.subShaders)
 
+class NumExprShader(MultiShader):
+    def __init__(self, width=800, height=600):
+        super().__init__(width=width, height=height)
+
+    def compileShader(self, expression, typeList):
+        self.shader = numexpr.NumExpr(expression, typeList)
+    
+    def runCompiledShader(self)

@@ -55,3 +55,4 @@ def masterShader(x, y, u, v, ls):
 - Blending shaders - so multiple processes can be run on the same image.
 - Parallel processing of the *"master shader"* in order to improve performance.
 - Unit square bilerp for uv of a `subShader`
+- NumExpr type shaders for very efficient, strict shaders.
