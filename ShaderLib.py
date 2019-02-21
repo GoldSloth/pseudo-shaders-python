@@ -37,7 +37,7 @@ class MultiThreadedShader(BaseShader):
         result = self.p.map(shader, [n for n in self._taskGenerator()])
         for y in range(self.width):
             for x in range(self.height):
-                self._img[y, x] = result[x * self.width + y]
+                self.image[y, x] = result[x * self.width + y]
 
 class LayerShader(BaseShader):
     def __init__(self, height, width):
@@ -49,12 +49,12 @@ class LayerShader(BaseShader):
         self.subShaders[shaderID] = shader
 
     def runShader(self, masterShader):
-        for y in range(self._img.shape[0]):
-            for x in range(self._img.shape[1]):
+        for y in range(self.height):
+            for x in range(self.width):
                 v = y / self.height
                 u = x / self.width
                 
-                self._img[y, x] = masterShader(u, v, self.subShaders)
+                self.image[y, x] = masterShader(u, v, self.subShaders)
 
 # class NumExprShader(MultiShader):
 #     def __init__(self, width=800, height=600):
