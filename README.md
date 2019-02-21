@@ -2,8 +2,10 @@
 
 The file `ShaderLib.py` can be imported - It contains the following classes
 - `BaseShader`
+- `BaseImage` \- Inherits from `BaseShader`
 - `MultiThreadedShader` \- Inherits from `BaseShader`
 - `LayerShader` \- Inherits from `BaseShader`
+- `NumExprLayerShader` \- Inherits from `BaseShader`
 
 ## `BaseShader`
 The `BaseShader` has little function and should not be used.
@@ -23,9 +25,16 @@ Arguments:
 - u: Float relating to X position in image (0 to 1)
 - v: Float relating to Y position in image (0 to 1)
 
+### `BaseImage`
+Used to load images from file into a format that can be processed
+#### Construction
+Arguments:
+- filename
+
 ### `MultiThreadedShader`
 #### Construction
 *See base shader*
+
 Arguments:
 - Threads: The total number of threads used when executing this shader.
 
@@ -43,7 +52,7 @@ def shader(arguments):
 ```
 This method is multithreaded.
 
-### _LayerShader_
+### `LayerShader`
 #### Construction
 *See base shader*
 
@@ -54,7 +63,14 @@ Arguments:
 - shaderID: A string identifying this layer.
 - shader: A class descended from ``BaseShader``
 - shaderProgram: The program to be run on the layer.
-### runShader(masterShader)
+
+#### `putShader(shaderID, shader)`
+Used like `addSubShader`, however the shader will not be run when added.
+Arguments:
+- shaderID: A string identifying this layer.
+- shader: A class descended from ``BaseShader``
+
+#### `runShader(masterShader)`
 Used to run a shader which has access to the layers added to the shader.
 Arguments:
 - masterShader: A shader which has access to all layers of the current ``LayerShader``
@@ -70,8 +86,24 @@ def masterShader(u, v, ls):
     return np.array([e, e, e, 255])
 ```
 
-### Planned features:
-- Loading images from disk
-- Blending shaders - so multiple processes can be run on the same image.
-- Parallel processing of the *"master shader"* in order to improve performance.
-- NumExpr type shaders for very efficient, strict shaders.
+### `NumExprLayerShader`
+#### Construction
+*See base shade*
+
+#### `runShader`
+This method can be used to run a NumExpr epression which operates on the whole image array. \- So it's similar to the LayerShader, but can, with optimisation, be more efficient.
+NumExpr does not support dictionaries or any sort of indexing, in order to run an expression on this object, you must first define properties on this object of the `image` property from the image/shader you wish to use.
+
+Example:
+```Python
+nelsh = NumExprLayerShader(512, 512)
+
+nelsh.sh1 = sh1.image
+nelsh.sh2 = sh2.image
+
+nelsh.runShader("sh1 * 0.1 + sh2 * 0.9")
+```
+
+Where `sh1` and `sh2` are implementations of the `BaseShader` class.
+
+For more information, visit the [NumExpr 2.0 User Guide](https://numexpr.readthedocs.io/en/latest/user_guide.html)

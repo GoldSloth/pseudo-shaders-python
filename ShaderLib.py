@@ -5,42 +5,50 @@ import multiprocessing
 import time
 
 class BaseShader:
-    def __init__(self, height, width):
-        self.height = height
+    def __init__(self, width, height):
         self.width = width
-        self.image = np.ndarray((height, width, 4), dtype=np.uint8)
+        self.height = height
+        self.image = np.ndarray((width, height, 4), dtype=np.uint8)
     
     def getPixel(self, u, v):
-        vU = np.floor(u * self.width)
-        vV = np.floor(v * self.height)
+        vU = int(u * self.width)
+        vV = int(v * self.height)
         return self.image[vU, vV]
 
     def saveImage(self, filename):
         im = Image.fromarray(self.image)
         im.save(filename, "PNG")
 
+class BaseImage(BaseShader):
+    def __init__(self, filename):
+        im = Image.open(filename)
+        self.width = im.size[1]
+        self.height = im.size[0]
+        self.image = np.array(im.getdata()).reshape(im.size[1], im.size[0], 4).astype("uint8")
+
+
 class MultiThreadedShader(BaseShader):
-    def __init__(self, height, width, threads):
+    def __init__(self, width, height, threads):
         self.threads = threads
-        return super().__init__(height, width)
+        return super().__init__(width, height)
     
     def _taskGenerator(self):
-        for y in range(self.width):
-            for x in range(self.height):
-                v = y / self.height
+        for x in range(self.width):
+            for y in range(self.height):
                 u = x / self.width
-                yield (v, u)
+                v = y / self.height
+                yield (u, v)
 
     def runShader(self, shader):
         # This code is rather nasty, but it works.
         self.p = multiprocessing.Pool(self.threads)
         result = self.p.map(shader, [n for n in self._taskGenerator()])
-        for y in range(self.width):
-            for x in range(self.height):
-                self.image[y, x] = result[x * self.width + y]
+        for x in range(self.width):
+            for y in range(self.height):
+                self.image[x, y] = result[x * self.width + y]
 
 class LayerShader(BaseShader):
-    def __init__(self, height, width):
+    def __init__(self, width, height):
         self.subShaders = {}
         return super().__init__(width, height)
 
@@ -48,19 +56,21 @@ class LayerShader(BaseShader):
         shader.runShader(shaderProgram)
         self.subShaders[shaderID] = shader
 
+    def putShader(self, shaderID, shader):
+        self.subShaders[shaderID] = shader
+
     def runShader(self, masterShader):
-        for y in range(self.height):
-            for x in range(self.width):
-                v = y / self.height
+        for x in range(self.width):
+            for y in range(self.height):
                 u = x / self.width
+                v = y / self.height
                 
-                self.image[y, x] = masterShader(u, v, self.subShaders)
+                self.image[x, y] = masterShader(u, v, self.subShaders)
 
-# class NumExprShader(MultiShader):
-#     def __init__(self, width=800, height=600):
-#         super().__init__(width=width, height=height)
+class NumExprLayerShader(BaseShader):
+    def __init__(self, height, width):
+        return super().__init__(width, height)
 
-#     def compileShader(self, expression, typeList):
-#         self.shader = numexpr.NumExpr(expression, typeList)
-    
-#     def runCompiledShader(self)
+    def runShader(self, masterShader):
+        self.image = numexpr.evaluate(masterShader, global_dict=vars(self)).astype('uint8')
+        
