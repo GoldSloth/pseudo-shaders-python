@@ -1,25 +1,51 @@
-from ShaderLib import ShaderProcess, MultiShader
+from ShaderLib import *
 import numpy as np
 
 def shader(arguments):
-    x, y, u, v = arguments
+    u, v = arguments
     e = np.uint8(v * 255)
     return np.array([e, e, e, 255])
 
-def masterShader(x, y, u, v, ls):
-    e = ls["sh1"].getPixel(x, y)[0] * (1-u) * v ** 2
+def shader2(arguments):
+    u, v = arguments
+    e = np.uint8(u * v * 255)
     return np.array([e, e, e, 255])
 
-sh = ShaderProcess(height=2048, width=2048)
+def masterShader(u, v, ls):
+    e = ls["sh1"].getPixel(u, v)
+    f = ls["sh2"].getPixel(u, v)
+    return (e/2 + f/2)
 
-sh.runShader(shader)
+sh1 = MultiThreadedShader(512, 512, 4)
 
-sh.toImage("test3.png")
+sh1.runShader(shader)
 
-# msh = MultiShader(height=256, width=256)
+sh1.saveImage("test1.png")
 
-# msh.addSubShader("sh1", sh, shader)
+sh2 = MultiThreadedShader(512, 512, 4)
 
-# msh.runShader(masterShader)
+sh2.runShader(shader2)
 
-# msh.toImage("test2.png")
+sh2.saveImage("test2.png")
+
+lsh = LayerShader(512, 512)
+
+lsh.putShader("sh1", sh1)
+lsh.putShader("sh2", sh2)
+
+lsh.runShader(masterShader)
+
+lsh.saveImage("test3.png")
+
+nelsh = NumExprLayerShader(512, 512)
+
+nelsh.sh1 = sh1.image
+nelsh.sh2 = sh2.image
+
+nelsh.runShader("sh1 * 0.1 + sh2 * 0.9")
+
+nelsh.saveImage("test4.png")
+
+bi = BaseImage("test4.png")
+
+bi.saveImage("test5.png")
